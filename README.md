@@ -1,49 +1,48 @@
-# 🐢 Taller ROS 2: Comunicación entre Nodos con Turtlesim
+# 🐢 ROS 2 Workshop: Communication Between Nodes with Turtlesim
 
-## 🎯 Objetivo del taller
+## 🎯 Workshop Objective
 
-Desarrollar dos nodos ROS 2 que se comuniquen entre sí mediante tópicos para controlar el movimiento de *Turtlesim* en un patrón **triangular**, utilizando la información de odometría.
+Develop two ROS 2 nodes that communicate with each other through topics to control the movement of *Turtlesim* in a **triangular** pattern, using odometry information.
 
 ---
 
-## 🧱 Parte 1: Crear el Workspace
+## 🧱 Part 1: Create the Workspace
 
-Antes de comenzar a desarrollar con ROS 2, es necesario crear un **workspace**, que es un entorno de trabajo donde se almacenarán y compilarán todos los paquetes del proyecto.
+Before starting development with ROS 2, you need to create a **workspace**, which is a working environment where all project packages will be stored and built.
 
-Los siguientes comandos te permiten crear y preparar ese entorno:
+The following commands allow you to create and prepare this environment:
 
 ```bash
 mkdir -p ~/ros2_ws/src
 ```
 
-Este comando crea una carpeta llamada `ros2_ws` dentro de tu directorio personal (`~`) y, dentro de ella, una subcarpeta llamada `src`. Esta carpeta `src` es esencial, ya que es donde se colocarán los paquetes ROS que vas a crear o clonar. `colcon build` buscará automáticamente los paquetes dentro de esta carpeta para compilarlos.
+This command creates a folder called `ros2_ws` inside your home directory (`~`) and, within it, a subfolder called `src`. The `src` folder is essential because it is where the ROS packages you create or clone will be placed. `colcon build` automatically searches for packages inside this folder to build them.
 
 ```bash
 cd ~/ros2_ws
 colcon build
 ```
 
-Después de crear la estructura del workspace, cambiamos al directorio raíz (`ros2_ws`) y ejecutamos `colcon build`, que es la herramienta recomendada en ROS 2 para compilar workspaces. Esta orden compila todos los paquetes dentro de `src` y genera las carpetas `build/`, `install/` y `log/`. La carpeta `install/` es la que contendrá los archivos necesarios para ejecutar los nodos y scripts.
+After creating the workspace structure, navigate to the root directory (`ros2_ws`) and run `colcon build`, the recommended tool for building ROS 2 workspaces. This command builds all packages inside `src` and generates the `build/`, `install/`, and `log/` directories. The `install/` directory contains the files needed to run the nodes and scripts.
 
 ```bash
 source install/setup.bash
 ```
 
-Este comando configura el entorno actual de la terminal para que reconozca los paquetes y nodos que has compilado en tu workspace. Es **muy importante** ejecutar este comando **en cada nueva terminal** antes de correr cualquier nodo.
+This command configures the current terminal environment so that it recognizes the packages and nodes you have built in your workspace. It is **very important** to run this command **in every new terminal** before running any node.
 
+## 📦 Part 2: Create the Package
 
-## 📦 Parte 2: Crear el paquete
-
-Creamos un paquete llamado `turtle_controller` con soporte para Python y las dependencias necesarias:
+Create a package named `turtle_controller` with Python support and the required dependencies:
 
 ```bash
 cd ~/ros2_ws/src
 ros2 pkg create turtle_controller --build-type ament_python --dependencies rclpy geometry_msgs turtlesim
 ```
 
-Estructura esperada del paquete:
+Expected package structure:
 
-```
+```text
 turtle_controller/
 ├── turtle_controller/
 │   └── __init__.py
@@ -54,9 +53,9 @@ turtle_controller/
 
 ---
 
-## 🐢 Parte 3: Ejecutar Turtlesim
+## 🐢 Part 3: Run Turtlesim
 
-En una nueva terminal:
+In a new terminal:
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -65,9 +64,9 @@ ros2 run turtlesim turtlesim_node
 
 ---
 
-## 📥 Parte 4: Nodo Subscriber — `odom_listener.py`
+## 📥 Part 4: Subscriber Node — `odom_listener.py`
 
-Creamos el archivo:
+Create the file:
 
 ```bash
 cd ~/ros2_ws/src/turtle_controller/turtle_controller
@@ -75,14 +74,14 @@ touch odom_listener.py
 chmod +x odom_listener.py
 ```
 
-### 📘 ¿Qué hace este nodo?
+### 📘 What does this node do?
 
-* Se suscribe al tópico `/turtle1/pose`, donde Turtlesim publica su odometría.
-* Calcula la distancia total recorrida por la tortuga sumando los desplazamientos entre cada par de puntos.
-* Publica esa distancia acumulada en el tópico `/turtle1/path_length`.
-* Muestra la distancia total en consola y permite visualizarla con `rqt_plot`.
+* Subscribes to the `/turtle1/pose` topic, where Turtlesim publishes its pose information.
+* Calculates the total distance traveled by the turtle by adding the displacements between each pair of consecutive points.
+* Publishes the accumulated distance to the `/turtle1/path_length` topic.
+* Displays the total distance in the terminal and allows it to be visualized using `rqt_plot`.
 
-### 📄 Código:
+### 📄 Code:
 
 ```python
 import rclpy
@@ -113,7 +112,7 @@ class OdomListener(Node):
         msg_out.data = self.total_distance
         self.publisher.publish(msg_out)
 
-        self.get_logger().info(f"Distancia total recorrida: {self.total_distance:.2f} unidades")
+        self.get_logger().info(f"Total distance traveled: {self.total_distance:.2f} units")
 
 def main(args=None):
     rclpy.init(args=args)
@@ -123,7 +122,7 @@ def main(args=None):
     rclpy.shutdown()
 ```
 
-### 📄 Código explicado:
+### 📄 Code Explanation:
 
 ```python
 import rclpy
@@ -132,33 +131,37 @@ from turtlesim.msg import Pose
 from std_msgs.msg import Float32
 import math
 ```
-* Se importan los módulos necesarios:
 
-  * `Pose`: para recibir la posición de la tortuga.
-  * `Float32`: para publicar la distancia total recorrida.
-  * `math`: para usar funciones como `hypot` que calcula distancia euclidiana.
+* The required modules are imported:
+
+  * `Pose`: Receives the turtle's position.
+  * `Float32`: Publishes the total distance traveled.
+  * `math`: Provides functions such as `hypot`, which calculates the Euclidean distance.
 
 ```python
 class OdomListener(Node):
     def __init__(self):
         super().__init__('odom_listener')
 ```
-* Se define un nodo llamado `odom_listener`.
+
+* Defines a node named `odom_listener`.
 
 ```python
         self.subscription = self.create_subscription(Pose, '/turtle1/pose', self.pose_callback, 10)
         self.publisher = self.create_publisher(Float32, '/turtle1/path_length', 10)
 ```
-* El nodo:
 
-  * Se suscribe al tópico `/turtle1/pose`.
-  * Publica en `/turtle1/path_length` la distancia total recorrida acumulada.
+* The node:
+
+  * Subscribes to the `/turtle1/pose` topic.
+  * Publishes the accumulated total distance traveled to the `/turtle1/path_length` topic.
 
 ```python
         self.last_pose = None
         self.total_distance = 0.0
 ```
-* Guarda la última posición conocida para poder calcular los incrementos de distancia.
+
+* Stores the last known position so that distance increments can be calculated.
 
 ```python
     def pose_callback(self, msg):
@@ -170,23 +173,26 @@ class OdomListener(Node):
 
         self.last_pose = msg
 ```
-* Cada vez que recibe una nueva pose:
 
-  * Calcula la distancia recorrida desde la última.
-  * La suma al total acumulado.
-  * Actualiza la última posición.
+* Every time a new pose is received:
+
+  * Calculates the distance traveled since the previous pose.
+  * Adds it to the accumulated total.
+  * Updates the last known position.
 
 ```python
         msg_out = Float32()
         msg_out.data = self.total_distance
         self.publisher.publish(msg_out)
 ```
-* Publica el total acumulado como un `Float32`.
+
+* Publishes the accumulated total as a `Float32` message.
 
 ```python
-        self.get_logger().info(f"Distancia total recorrida: {self.total_distance:.2f} unidades")
+        self.get_logger().info(f"Total distance traveled: {self.total_distance:.2f} units")
 ```
-* Imprime por consola la distancia total con dos decimales.
+
+* Prints the total distance in the terminal to two decimal places.
 
 ```python
 def main(args=None):
@@ -197,32 +203,32 @@ def main(args=None):
     rclpy.shutdown()
 ```
 
-* Estructura estándar de ROS 2 para inicializar, ejecutar y finalizar el nodo.
+* Standard ROS 2 structure for initializing, running, and shutting down the node.
+
 ---
 
-## 📤 Parte 5: Nodo Publisher — `triangle_stepper.py`
+## 📤 Part 5: Publisher Node — `triangle_stepper.py`
 
-Primero, creamos el archivo del nodo:
+First, create the node file:
 
 ```bash
 touch triangle_stepper.py
 chmod +x triangle_stepper.py
 ```
 
-### 📘 ¿Qué hace este nodo?
+### 📘 What does this node do?
 
-Este nodo controla el movimiento de la tortuga para que recorra un **triángulo equilátero** de manera precisa, utilizando la información de odometría publicada en `/turtle1/pose`.
+This node controls the turtle's movement so that it follows an **equilateral triangle** accurately, using the pose information published on `/turtle1/pose`.
 
-El comportamiento es el siguiente:
+Its behavior is as follows:
 
-* La tortuga **calcula tres vértices** que forman un triángulo equilátero, usando su posición de inicio como primer punto.
-* Se **gira en el lugar** hasta alinearse con el siguiente vértice.
-* Luego **se mueve recto** exactamente 3 unidades hasta ese vértice.
-* Se detiene brevemente, **gira hacia el siguiente vértice**, y repite.
-* El triángulo se repite **indefinidamente** con precisión geométrica.
+* The turtle **calculates three vertices** that form an equilateral triangle, using its starting position as the first point.
+* It **rotates in place** until it is aligned with the next vertex.
+* It then **moves straight ahead** for exactly 3 units to reach that vertex.
+* It pauses briefly, **turns toward the next vertex**, and repeats the process.
+* The triangular pattern repeats **indefinitely**, following the intended geometric path.
 
-
-### 📄 Código:
+### 📄 Code:
 
 ```python
 import rclpy
@@ -259,7 +265,7 @@ class TriangleStepper(Node):
 
         msg = Twist()
 
-        # Inicializar triángulo solo una vez
+        # Initialize the triangle only once
         if not self.vertices:
             x0, y0 = self.pose.x, self.pose.y
             p1 = (x0, y0)
@@ -314,7 +320,7 @@ def main(args=None):
     rclpy.shutdown()
 ```
 
-### 📄 Código explicado:
+### 📄 Code Explanation:
 
 ```python
 import rclpy
@@ -323,59 +329,63 @@ from turtlesim.msg import Pose
 from geometry_msgs.msg import Twist
 import math
 ```
-* Se importan los módulos necesarios para crear un nodo, suscribirse a odometría y publicar comandos de movimiento.
+
+* Imports the required modules to create a node, subscribe to pose information, and publish movement commands.
 
 ```python
 class TriangleStepper(Node):
     def __init__(self):
         ...
 ```
-* Se define el nodo `triangle_stepper` que controla el movimiento a través de odometría y lógica de trayectoria.
+
+* Defines the `triangle_stepper` node, which controls movement using pose information and trajectory-planning logic.
 
 ```python
         self.vertices = []
         self.vertex_index = 0
 ```
 
-* Se define una lista con los 3 puntos del triángulo que se recorrerán en bucle.
+* Defines a list containing the three triangle vertices that the turtle will visit in a loop.
 
 ```python
     def control_loop(self):
         ...
 ```
-* Esta función se ejecuta cada 0.1 segundos y define el comportamiento secuencial:
 
-  * **`turn`**: girar hacia el siguiente vértice.
-  * **`pause`**: detenerse brevemente para asegurar estabilidad.
-  * **`move`**: avanzar en línea recta hasta alcanzar el siguiente vértice.
+* This function runs every 0.1 seconds and defines the sequence of actions:
+
+  * **`turn`**: Rotate toward the next vertex.
+  * **`pause`**: Stop briefly to ensure stability.
+  * **`move`**: Move in a straight line until the next vertex is reached.
 
 ```python
         if not self.vertices:
             ...
 ```
-* Se inicializan los tres vértices del triángulo en función de la posición actual de la tortuga.
+
+* Initializes the three triangle vertices based on the turtle's current position.
 
 ```python
         self.angle_target = self.normalize_angle(...)
 ```
 
-* Se calcula el ángulo que la tortuga debe alcanzar para estar alineada con el siguiente vértice.
+* Calculates the angle the turtle needs to reach to align itself with the next vertex.
 
 ```python
         self.publisher.publish(msg)
 ```
 
-* Se publican los comandos de velocidad en `/turtle1/cmd_vel` para mover la tortuga.
+* Publishes velocity commands to `/turtle1/cmd_vel` to move the turtle.
 
 ---
 
-## ⚙️ Parte 6: Configuración del archivo `setup.py`
+## ⚙️ Part 6: Configure the `setup.py` File
 
-Para que los nodos Python del paquete puedan ser ejecutados directamente con `ros2 run`, es necesario registrarlos en el archivo `setup.py` dentro de la sección `entry_points`.
+For the package's Python nodes to be executed directly using `ros2 run`, they must be registered in the `entry_points` section of the `setup.py` file.
 
-Si ya tienes este archivo generado automáticamente, modifícalo así:
+If this file was generated automatically, modify it as follows:
 
-### 📝 Modificación del archivo `setup.py`
+### 📝 Modify the `setup.py` File
 
 ```python
 from setuptools import find_packages, setup
@@ -407,34 +417,35 @@ setup(
 )
 ```
 
-### 🔍 Explicación
+### 🔍 Explanation
 
-* En `console_scripts`, se define una lista de scripts que ROS 2 podrá ejecutar como nodos.
-* Cada entrada tiene el formato:
+* In `console_scripts`, you define a list of scripts that ROS 2 can execute as nodes.
+* Each entry follows this format:
 
   ```bash
-  nombre_comando = paquete.nombre_archivo:función_principal
+  command_name = package.module_name:main_function
   ```
 
-  Por ejemplo:
+  For example:
 
-  * `odom_listener` es el nombre con el que ejecutarás el nodo:
+  * `odom_listener` is the command used to run the node:
 
     ```bash
     ros2 run turtle_controller odom_listener
     ```
-  * Este nombre se vincula con el archivo `odom_listener.py` dentro de la carpeta del paquete y su función `main()`.
 
-⚠️ **Nota importante:** Asegúrate de que ambos archivos (`odom_listener.py` y `triangle_mover.py`) estén dentro de la carpeta `turtle_controller/turtle_controller/`, y que tengan permisos de ejecución. Posicionarse en la carpeta que contiene a los nodos (turtle_controller) y ejecutar:
+  * This command is linked to the `odom_listener.py` file inside the package directory and its `main()` function.
+
+⚠️ **Important note:** Make sure both files (`odom_listener.py` and `triangle_stepper.py`) are inside the `turtle_controller/turtle_controller/` directory and have execution permissions. Navigate to the directory containing the node files and run:
 
 ```bash
 chmod +x odom_listener.py
-chmod +x triangle_mover.py
+chmod +x triangle_stepper.py
 ```
 
 ---
 
-## 🚀 Parte 7: Compilar y ejecutar
+## 🚀 Part 7: Build and Run
 
 ```bash
 cd ~/ros2_ws
@@ -442,18 +453,19 @@ colcon build
 source install/setup.bash
 ```
 
-Lanzar los nodos en terminales separadas:
+Launch the nodes in separate terminals:
 
 ```bash
 ros2 run turtle_controller odom_listener
 ros2 run turtle_controller triangle_mover
 ```
+
 ---
 
-## 📤 Entregables
+## 📤 Deliverables
 
-Cada estudiante debe entregar:
+Each student must submit:
 
-- ✅ El archivo `odom_listener.py`.
-- ✅ El archivo `triangle_mover.py`.
-- ✅ Un video donde se vea la tortuga moviéndose en un patrón triangular, mientras ambos nodos están activos.
+- ✅ The `odom_listener.py` file.
+- ✅ The `triangle_stepper.py` file.
+- ✅ A video showing the turtle moving in a triangular pattern while both nodes are running.
